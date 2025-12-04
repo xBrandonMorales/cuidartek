@@ -183,6 +183,54 @@ class Database:
                     FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario) ON DELETE CASCADE
                 )
             """)
+
+            # Crear tabla Mensajes
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS mensajes (
+                    id_mensaje INT AUTO_INCREMENT PRIMARY KEY,
+                    id_remitente INT NOT NULL,
+                    id_destinatario INT NOT NULL,
+                    asunto VARCHAR(255),
+                    contenido TEXT NOT NULL,
+                    fecha_envio TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    leido BOOLEAN DEFAULT FALSE,
+                    fecha_leido TIMESTAMP NULL,
+                    FOREIGN KEY (id_remitente) REFERENCES usuario(id_usuario) ON DELETE CASCADE,
+                    FOREIGN KEY (id_destinatario) REFERENCES usuario(id_usuario) ON DELETE CASCADE
+                )
+            """)
+            # Crear tabla Paciente_Medico (relaciones)
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS paciente_medico (
+                    id_relacion INT AUTO_INCREMENT PRIMARY KEY,
+                    id_paciente INT NOT NULL,
+                    id_medico INT NOT NULL,
+                    fecha_asignacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    estatus ENUM('pendiente', 'activo', 'rechazado', 'finalizado') DEFAULT 'pendiente',
+                    notas TEXT,
+                    fecha_actualizacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    UNIQUE KEY unique_paciente_medico (id_paciente, id_medico),
+                    FOREIGN KEY (id_paciente) REFERENCES paciente(id_paciente) ON DELETE CASCADE,
+                    FOREIGN KEY (id_medico) REFERENCES usuario(id_usuario) ON DELETE CASCADE
+                )
+            """)
+            # Crear tabla Medico (perfil médico)
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS medico (
+                    id_medico INT AUTO_INCREMENT PRIMARY KEY,
+                    id_usuario INT NOT NULL,
+                    especialidad VARCHAR(255),
+                    cedula_profesional VARCHAR(50) UNIQUE,
+                    telefono_consultorio VARCHAR(20),
+                    direccion_consultorio TEXT,
+                    horario_consultorio TEXT,
+                    anos_experiencia INT,
+                    universidad VARCHAR(255),
+                    estatus ENUM('Activo', 'Inactivo') DEFAULT 'Activo',
+                    fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario) ON DELETE CASCADE
+                )
+            """)
             
             connection.commit()
             print("Base de datos y tablas creadas exitosamente!")

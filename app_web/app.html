@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CuidarTek - Panel Médico</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<!-- Loading Overlay -->
+<div id="loadingOverlay" class="loading-overlay d-none">
+    <div class="loading-container">
+        <div class="spinner-border text-primary" role="status" style="width: 4rem; height: 4rem;">
+            <span class="visually-hidden">Cargando...</span>
+        </div>
+        <div class="loading-message mt-3">
+            <p class="mb-0">Procesando, por favor espere...</p>
+        </div>
+    </div>
+</div>
+<body>
+    <!-- Login Screen -->
+    <div id="loginScreen" class="login-screen-wrapper">
+        <div class="login-container-wrapper">
+            <div class="login-tabs-container">
+                <!-- Tabs para Login/Registro -->
+                <ul class="nav nav-pills login-nav-tabs" id="authTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="login-tab" data-bs-toggle="tab" data-bs-target="#login" type="button" role="tab" aria-controls="login" aria-selected="true">
+                            <i class="fas fa-sign-in-alt me-2"></i>Iniciar Sesión
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="register-tab" data-bs-toggle="tab" data-bs-target="#register" type="button" role="tab" aria-controls="register" aria-selected="false">
+                            <i class="fas fa-user-plus me-2"></i>Registrarse
+                        </button>
+                    </li>
+                </ul>
+
+                <!-- Contenido de los Tabs -->
+                <div class="tab-content login-tab-content" id="authTabsContent">
+                    <!-- Tab de Login -->
+                    <div class="tab-pane fade show active" id="login" role="tabpanel" aria-labelledby="login-tab">
+                        <div class="login-form-container">
+                            <div class="text-center mb-4">
+                                <h2 class="fw-bold text-primary">CuidarTek</h2>
+                                <p class="text-muted">Panel de Control Médico</p>
+                            </div>
+                            <form id="loginForm">
+                                <div class="mb-3">
+                                    <label for="email" class="form-label">Correo Electrónico</label>
+                                    <input type="email" class="form-control" id="email" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="password" class="form-label">Contraseña</label>
+                                    <input type="password" class="form-control" id="password" required>
+                                </div>
+                                <div class="d-grid">
+                                    <button type="submit" class="btn btn-primary btn-lg">Iniciar Sesión</button>
+                                </div>
+                            </form>
+                            <div id="loginError" class="alert alert-danger mt-3 d-none" role="alert">
+                                Error al iniciar sesión. Verifique sus credenciales.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tab de Registro -->
+                    <div class="tab-pane fade" id="register" role="tabpanel" aria-labelledby="register-tab">
+                        <div class="login-form-container">
+                            <div class="text-center mb-4">
+                                <h2 class="fw-bold text-success">Registro Médico</h2>
+                                <p class="text-muted">Crear nueva cuenta de médico</p>
+                            </div>
+
+                            <!-- Indicador de carga -->
+                            <div id="registerLoading" class="d-none text-center py-4">
+                                <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
+                                    <span class="visually-hidden">Cargando...</span>
+                                </div>
+                                <p class="text-muted fs-5">Registrando médico, por favor espere...</p>
+                            </div>
+
+                            <form id="registerForm">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="registerNombre" class="form-label">Nombre Completo</label>
+                                            <input type="text" class="form-control" id="registerNombre" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="registerEmail" class="form-label">Correo Electrónico</label>
+                                            <input type="email" class="form-control" id="registerEmail" required>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="registerPassword" class="form-label">Contraseña</label>
+                                            <input type="password" class="form-control" id="registerPassword" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="registerConfirmPassword" class="form-label">Confirmar Contraseña</label>
+                                            <input type="password" class="form-control" id="registerConfirmPassword" required>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="registerEspecialidad" class="form-label">Especialidad</label>
+                                    <input type="text" class="form-control" id="registerEspecialidad" placeholder="Ej: Cardiología, Pediatría, etc.">
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="registerTelefono" class="form-label">Teléfono</label>
+                                    <input type="tel" class="form-control" id="registerTelefono" placeholder="Ej: +52 555-123-4567">
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="registerUniversidad" class="form-label">Universidad</label>
+                                    <input type="text" class="form-control" id="registerUniversidad" placeholder="Ej: Universidad Nacional Autónoma de México">
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="registerDireccion" class="form-label">Dirección del Consultorio</label>
+                                    <textarea class="form-control" id="registerDireccion" rows="2" placeholder="Av. Principal #123, Ciudad de México"></textarea>
+                                </div>
+
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="registerTerms" required>
+                                    <label class="form-check-label" for="registerTerms">
+                                        Acepto los <a href="#" class="text-primary">términos y condiciones</a>
+                                    </label>
+                                </div>
+
+                                <div class="d-grid">
+                                    <button type="submit" class="btn btn-success btn-lg" id="registerSubmitBtn">
+                                        <span id="registerBtnText">Registrarse como Médico</span>
+                                        <div id="registerBtnSpinner" class="spinner-border spinner-border-sm d-none ms-2" role="status">
+                                            <span class="visually-hidden">Cargando...</span>
+                                        </div>
+                                    </button>
+                                </div>
+                            </form>
+                            <div id="registerError" class="alert alert-danger mt-3 d-none" role="alert"></div>
+                            <div id="registerSuccess" class="alert alert-success mt-3 d-none" role="alert"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- El resto de tu código HTML permanece exactamente igual -->
+    <!-- Main Application -->
+    <div id="app" class="d-none">
+        <div class="container-fluid">
+            <div class="row">
+                <!-- Sidebar -->
+                <div class="col-md-3 col-lg-2 sidebar p-0">
+                    <div class="d-flex flex-column p-3">
+                        <div class="d-flex align-items-center mb-4">
+                            <i class="fas fa-heartbeat fa-2x me-2"></i>
+                            <span class="fs-4 fw-bold">CuidarTek</span>
+                        </div>
+                        <ul class="nav nav-pills flex-column mb-auto">
+                            <li class="nav-item">
+                                <a href="#" class="nav-link active" data-module="patients">
+                                    <i class="fas fa-users me-2"></i>
+                                    Gestión de Pacientes
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="#" class="nav-link" data-module="indicators">
+                                    <i class="fas fa-chart-line me-2"></i>
+                                    Indicadores de Salud
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="#" class="nav-link" data-module="solicitudes">
+                                    <i class="fas fa-clipboard-list me-2"></i>
+                                    Solicitudes
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="#" class="nav-link" data-module="communication">
+                                    <i class="fas fa-comments me-2"></i>
+                                    Comunicación
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="#" class="nav-link" data-module="reports">
+                                    <i class="fas fa-file-medical me-2"></i>
+                                    Reportes Médicos
+                                </a>
+                            </li>
+                        </ul>
+                        <hr>
+                        <div class="dropdown">
+                            <a href="#" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle" id="dropdownUser" data-bs-toggle="dropdown" aria-expanded="false">
+                                <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px;">
+                                    <i class="fas fa-user text-white"></i>
+                                </div>
+                                <span id="userName">Médico</span>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-dark text-small shadow" aria-labelledby="dropdownUser">
+                                <li><a class="dropdown-item" href="#" onclick="showProfile()">
+                                    <i class="fas fa-user-circle me-2"></i>Perfil
+                                </a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="#" id="logoutBtn">
+                                    <i class="fas fa-sign-out-alt me-2"></i>Cerrar Sesión
+                                </a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Main Content -->
+                <div class="col-md-9 col-lg-10 main-content">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h3 id="moduleTitle">Gestión de Pacientes</h3>
+                        <div class="d-flex">
+                            <button class="btn btn-outline-secondary me-2" id="refreshBtn">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                            <div class="input-group" style="width: 300px;">
+                                <input type="text" class="form-control" placeholder="Buscar pacientes, mensajes, reportes..." id="searchInput">
+                                <button class="btn btn-outline-primary" type="button" id="searchBtn">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Patients Module -->
+                    <div id="patientsModule" class="module-content">
+                        <div class="row mb-4">
+                            <div class="col-md-3">
+                                <div class="card bg-primary text-white">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between">
+                                            <div>
+                                                <h5 id="totalPatients">0</h5>
+                                                <p class="mb-0">Pacientes Totales</p>
+                                            </div>
+                                            <div class="align-self-center">
+                                                <i class="fas fa-users fa-2x"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card bg-success text-white">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between">
+                                            <div>
+                                                <h5 id="activePatients">0</h5>
+                                                <p class="mb-0">Pacientes Activos</p>
+                                            </div>
+                                            <div class="align-self-center">
+                                                <i class="fas fa-user-check fa-2x"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card bg-info text-white">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between">
+                                            <div>
+                                                <h5 id="totalMedications">0</h5>
+                                                <p class="mb-0">Con Medicamentos</p>
+                                            </div>
+                                            <div class="align-self-center">
+                                                <i class="fas fa-pills fa-2x"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card bg-warning text-white">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between">
+                                            <div>
+                                                <h5 id="totalConditions">0</h5>
+                                                <p class="mb-0">Con Enfermedades</p>
+                                            </div>
+                                            <div class="align-self-center">
+                                                <i class="fas fa-file-medical fa-2x"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tabla de Mis Pacientes Asignados (sin pestañas) -->
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">Mis Pacientes Asignados</h5>
+                                <span class="badge bg-primary" id="myPatientsCount">0 pacientes</span>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-hover" id="myPatientsTable">
+                                        <thead>
+                                            <tr>
+                                                <th>Nombre</th>
+                                                <th>Edad</th>
+                                                <th>Sexo</th>
+                                                <th>Peso</th>
+                                                <th>Altura</th>
+                                                <th>Enfermedades</th>
+                                                <th>Acciones</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="myPatientsTableBody">
+                                            <!-- Los datos se cargarán dinámicamente -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Solicitudes Module -->
+                    <div id="solicitudesModule" class="module-content d-none">
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <div class="card">
+                                    <div class="card-header d-flex justify-content-between align-items-center">
+                                        <h5 class="mb-0">Solicitudes de Pacientes</h5>
+                                        <div class="btn-group">
+                                            <button class="btn btn-outline-primary btn-sm" onclick="refreshSolicitudes()">
+                                                <i class="fas fa-sync-alt me-1"></i>Actualizar
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="table-responsive">
+                                            <table class="table table-hover" id="solicitudesTable">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Paciente</th>
+                                                        <th>Correo</th>
+                                                        <th>Edad</th>
+                                                        <th>Sexo</th>
+                                                        <th>Fecha de Solicitud</th>
+                                                        <th>Notas</th>
+                                                        <th>Acciones</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="solicitudesTableBody">
+                                                    <!-- Los datos se cargarán dinámicamente -->
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Indicators Module -->
+                    <div id="indicatorsModule" class="module-content d-none">
+                        <div class="row mb-4">
+                            <div class="col-md-8">
+                                <div class="card">
+                                    <div class="card-header d-flex justify-content-between align-items-center">
+                                        <h5 class="mb-0">Indicadores de Salud</h5>
+                                        <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addIndicatorModal">
+                                            <i class="fas fa-plus me-1"></i> Agregar Indicadores
+                                        </button>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="chart-container">
+                                            <canvas id="healthIndicatorsChart"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5 class="mb-0">Seleccionar Paciente</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <select class="form-select" id="patientSelector">
+                                            <option value="">Seleccione un paciente</option>
+                                        </select>
+                                        <div class="mt-3">
+                                            <h6>Últimos Indicadores</h6>
+                                            <ul class="list-group list-group-flush" id="latestIndicators">
+                                                <!-- Los datos se cargarán dinámicamente -->
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Communication Module -->
+                    <div id="communicationModule" class="module-content d-none">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5 class="mb-0">Chats con Pacientes</h5>
+                                    </div>
+                                    <div class="card-body p-0">
+                                        <div class="list-group list-group-flush" id="chatList">
+                                            <!-- Los chats se cargarán dinámicamente -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-8">
+                                <div class="card">
+                                    <div class="card-header d-flex justify-content-between align-items-center">
+                                        <h5 class="mb-0" id="chatTitle">Seleccione un chat</h5>
+                                        <div class="dropdown">
+                                            <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" id="chatActions" data-bs-toggle="dropdown" aria-expanded="false">
+                                                <i class="fas fa-ellipsis-v"></i>
+                                            </button>
+                                            <ul class="dropdown-menu" aria-labelledby="chatActions">
+                                                <li><a class="dropdown-item" href="#" onclick="clearChat()"><i class="fas fa-broom me-2"></i>Limpiar chat</a></li>
+                                                <li><a class="dropdown-item" href="#" onclick="exportConversation()"><i class="fas fa-download me-2"></i>Exportar conversación</a></li>
+                                                <li><hr class="dropdown-divider"></li>
+                                                <li><a class="dropdown-item text-danger" href="#" onclick="cleanupChats()"><i class="fas fa-times me-2"></i>Cerrar conversación</a></li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="card-body p-0 flex-grow-1 d-flex flex-column">
+                                        <div id="chatMessages" class="flex-grow-1 p-3" style="overflow-y: auto; max-height: 400px; min-height: 300px;">
+                                            <div class="text-center p-4 text-muted h-100 d-flex align-items-center justify-content-center">
+                                                <div>
+                                                    <i class="fas fa-comments fa-3x mb-3"></i>
+                                                    <p class="mb-0">Selecciona una conversación para comenzar a chatear</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="card-footer">
+                                        <div class="input-group">
+                                            <input type="text" class="form-control" placeholder="Escriba su mensaje..." id="messageInput">
+                                            <button class="btn btn-primary" type="button" id="sendMessageBtn">
+                                                <i class="fas fa-paper-plane"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Reports Module -->
+                    <div id="reportsModule" class="module-content d-none">
+                        <div class="row mb-4">
+                            <div class="col-md-8">
+                                <div class="card">
+                                    <div class="card-header d-flex justify-content-between align-items-center">
+                                        <h5 class="mb-0">Reportes Médicos</h5>
+                                        <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addReportModal">
+                                            <i class="fas fa-plus me-1"></i> Generar Reporte
+                                        </button>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="table-responsive">
+                                            <table class="table table-hover" id="reportsTable">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Paciente</th>
+                                                        <th>Fecha</th>
+                                                        <th>Diagnóstico</th>
+                                                        <th>Recomendaciones</th>
+                                                        <th>Acciones</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="reportsTableBody">
+                                                    <!-- Los datos se cargarán dinámicamente -->
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5 class="mb-0">Filtrar por Paciente</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <select class="form-select" id="reportPatientFilter">
+                                            <option value="">Todos los pacientes</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para ver/editar paciente -->
+    <div class="modal fade" id="patientViewModal" tabindex="-1" aria-labelledby="patientViewModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="patientViewModalLabel">Ver Paciente</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="patientViewModalBody">
+                    <!-- El contenido se carga dinámicamente -->
+                </div>
+                <div class="modal-footer" id="patientViewModalFooter">
+                    <!-- Los botones se cargan dinámicamente -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para agregar indicadores -->
+    <div class="modal fade" id="addIndicatorModal" tabindex="-1" aria-labelledby="addIndicatorModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addIndicatorModalLabel">Agregar Indicadores de Salud</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addIndicatorForm">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="indicatorPatient" class="form-label">Paciente</label>
+                                    <select class="form-select" id="indicatorPatient" required>
+                                        <option value="">Seleccione un paciente</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="indicatorDate" class="form-label">Fecha de Registro</label>
+                                    <input type="datetime-local" class="form-control" id="indicatorDate" required>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="presionSistolica" class="form-label">Presión Sistólica</label>
+                                    <input type="number" class="form-control" id="presionSistolica" placeholder="Ej: 120">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="presionDiastolica" class="form-label">Presión Diastólica</label>
+                                    <input type="number" class="form-control" id="presionDiastolica" placeholder="Ej: 80">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="glucosa" class="form-label">Glucosa (mg/dL)</label>
+                                    <input type="number" step="0.01" class="form-control" id="glucosa" placeholder="Ej: 95.5">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="peso" class="form-label">Peso (kg)</label>
+                                    <input type="number" step="0.01" class="form-control" id="peso" placeholder="Ej: 70.5">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="frecuenciaCardiaca" class="form-label">Frecuencia Cardíaca (lpm)</label>
+                                    <input type="number" class="form-control" id="frecuenciaCardiaca" placeholder="Ej: 72">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="estadoAnimo" class="form-label">Estado de Ánimo</label>
+                                    <select class="form-select" id="estadoAnimo">
+                                        <option value="">Seleccione</option>
+                                        <option value="Excelente">Excelente</option>
+                                        <option value="Bueno">Bueno</option>
+                                        <option value="Regular">Regular</option>
+                                        <option value="Malo">Malo</option>
+                                        <option value="Deprimido">Deprimido</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="actividadFisica" class="form-label">Actividad Física</label>
+                                    <select class="form-select" id="actividadFisica">
+                                        <option value="">Seleccione</option>
+                                        <option value="Sedentario">Sedentario</option>
+                                        <option value="Ligera">Ligera</option>
+                                        <option value="Moderada">Moderada</option>
+                                        <option value="Intensa">Intensa</option>
+                                        <option value="Atlética">Atlética</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="fuenteDato" class="form-label">Fuente del Dato</label>
+                                    <select class="form-select" id="fuenteDato" required>
+                                        <option value="manual">Manual</option>
+                                        <option value="wearable">Wearable</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="addIndicator()">Guardar Indicadores</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para agregar reporte -->
+    <div class="modal fade" id="addReportModal" tabindex="-1" aria-labelledby="addReportModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addReportModalLabel">Generar Reporte Médico</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addReportForm">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="reportPatient" class="form-label">Paciente</label>
+                                    <select class="form-select" id="reportPatient" required>
+                                        <option value="">Seleccione un paciente</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="reportDate" class="form-label">Fecha del Reporte</label>
+                                    <input type="datetime-local" class="form-control" id="reportDate" required>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="descripcionGeneral" class="form-label">Descripción General</label>
+                            <textarea class="form-control" id="descripcionGeneral" rows="3" placeholder="Describa el estado general del paciente, síntomas, observaciones..."></textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="diagnostico" class="form-label">Diagnóstico</label>
+                            <textarea class="form-control" id="diagnostico" rows="3" placeholder="Escriba el diagnóstico médico..." required></textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="recomendacionesMedicas" class="form-label">Recomendaciones Médicas</label>
+                            <textarea class="form-control" id="recomendacionesMedicas" rows="3" placeholder="Indique las recomendaciones, tratamiento, medicamentos, seguimiento..." required></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="addReport()">Guardar Reporte</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para ver/editar reporte -->
+    <div class="modal fade" id="viewReportModal" tabindex="-1" aria-labelledby="viewReportModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="viewReportModalLabel">Ver Reporte Médico</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="viewReportModalBody">
+                    <!-- El contenido se carga dinámicamente -->
+                </div>
+                <div class="modal-footer" id="viewReportModalFooter">
+                    <!-- Los botones se cargan dinámicamente -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Configuración -->
+    <script src="js/config/constants.js"></script>
+    <script src="js/config/api.js"></script>
+    <!-- Elementos DOM -->
+    <script src="js/dom/elements.js"></script>
+    <!-- Utilidades -->
+    <script src="js/utils/notifications.js"></script>
+    <script src="js/utils/pdf.js"></script>
+    <script src="js/utils/helpers.js"></script>
+    <!-- Autenticación -->
+    <script src="js/auth/auth.js"></script>
+    <script src="js/auth/admin.js"></script>
+    <!-- Módulos -->
+    <script src="js/modules/common.js"></script>
+    <script src="js/modules/patients.js"></script>
+    <script src="js/modules/indicators.js"></script>
+    <script src="js/modules/reports.js"></script>
+    <script src="js/modules/communication.js"></script>
+    <script src="js/modules/profile.js"></script>
+    <script src="js/utils/search.js"></script>
+    <script src="js/modules/solicitudes.js"></script>
+    <!-- Aplicación principal -->
+    <script src="js/app.js"></script>
+
+    <!-- Modal de Perfil - Versión Actualizada -->
+    <div class="modal fade" id="profileModal" tabindex="-1" aria-labelledby="profileModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="profileModalLabel">
+                        <i class="fas fa-user-md me-2"></i>Perfil Médico
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-4 text-center">
+                            <div class="mb-4">
+                                <div class="profile-avatar bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" 
+                                     style="width: 120px; height: 120px; font-size: 3rem;">
+                                    <i class="fas fa-user-md"></i>
+                                </div>
+                                <h4 id="profileName">Dr. Nombre</h4>
+                                <span class="badge bg-success" id="profileStatus">Activo</span>
+                            </div>
+                            
+                            <!-- Esta tarjeta se llenará dinámicamente con datos del médico -->
+                            <div class="card mb-3">
+                                <div class="card-body">
+                                    <h6 class="card-title">Información Profesional</h6>
+                                    <div class="small text-muted">
+                                        <p class="mb-2">Cargando información profesional...</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="card">
+                                <div class="card-body">
+                                    <h6 class="card-title">Estadísticas</h6>
+                                    <div class="small">
+                                        <div class="d-flex justify-content-between mb-2">
+                                            <span>Pacientes asignados:</span>
+                                            <strong id="statsPatients">0</strong>
+                                        </div>
+                                        <div class="d-flex justify-content-between mb-2">
+                                            <span>Reportes generados:</span>
+                                            <strong id="statsReports">0</strong>
+                                        </div>
+                                        <div class="d-flex justify-content-between">
+                                            <span>Mensajes:</span>
+                                            <strong id="statsMessages">0</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-8">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6 class="mb-0">Información Personal y Profesional</h6>
+                                </div>
+                                <div class="card-body">
+                                    <form id="profileForm">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label">ID de Usuario</label>
+                                                    <input type="text" class="form-control" id="profileUserId" readonly>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Rol</label>
+                                                    <input type="text" class="form-control" id="profileRole" readonly>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <label for="profileEmail" class="form-label">Correo Electrónico</label>
+                                            <input type="email" class="form-control" id="profileEmail">
+                                        </div>
+                                        
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label for="profileSpecialty" class="form-label">Especialidad</label>
+                                                    <input type="text" class="form-control" id="profileSpecialty" placeholder="Ej: Cardiología">
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label for="profilePhone" class="form-label">Teléfono Consultorio</label>
+                                                    <input type="tel" class="form-control" id="profilePhone" placeholder="Ej: +52 555-123-4567">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <label for="profileBio" class="form-label">Universidad</label>
+                                            <input type="text" class="form-control" id="profileBio" placeholder="Ej: Universidad Nacional Autónoma de México">
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <label for="profileAddress" class="form-label">Dirección Consultorio</label>
+                                            <textarea class="form-control" id="profileAddress" rows="2" placeholder="Av. Principal #123, Ciudad de México"></textarea>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                            
+                            <!-- Sección de Cambio de Contraseña -->
+                            <div class="card mt-3">
+                                <div class="card-header">
+                                    <h6 class="mb-0">Cambio de Contraseña</h6>
+                                </div>
+                                <div class="card-body">
+                                    <form id="passwordForm">
+                                        <div class="mb-3">
+                                            <label for="currentPassword" class="form-label">Contraseña Actual</label>
+                                            <input type="password" class="form-control" id="currentPassword">
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="newPassword" class="form-label">Nueva Contraseña</label>
+                                            <input type="password" class="form-control" id="newPassword">
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="confirmPassword" class="form-label">Confirmar Nueva Contraseña</label>
+                                            <input type="password" class="form-control" id="confirmPassword">
+                                        </div>
+                                        <button type="button" class="btn btn-warning btn-sm" onclick="changePassword()">
+                                            <i class="fas fa-key me-1"></i>Cambiar Contraseña
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    <button type="button" class="btn btn-primary" onclick="updateProfile()">
+                        <i class="fas fa-save me-1"></i>Guardar Cambios
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
